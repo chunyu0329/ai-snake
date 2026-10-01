@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cyberpunk Neon Snake 2077</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Orbitron & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #060913;
+      color: #e2e8f0;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    .font-arcade {
+      font-family: 'Orbitron', monospace;
+    }
+    /* Neon Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.45), inset 0 0 10px rgba(6, 182, 212, 0.2);
+    }
+    .glow-pink {
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.45), inset 0 0 10px rgba(236, 72, 153, 0.2);
+    }
+    .text-glow-cyan {
+      text-shadow: 0 0 8px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+    .text-glow-pink {
+      text-shadow: 0 0 8px rgba(236, 72, 153, 0.8), 0 0 20px rgba(236, 72, 153, 0.4);
+    }
+    .text-glow-amber {
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.8), 0 0 20px rgba(245, 158, 11, 0.4);
+    }
+    /* Cyberpunk Grid Background */
+    .bg-cyber-grid {
+      background-image: 
+        linear-gradient(to right, rgba(20, 30, 55, 0.4) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(20, 30, 55, 0.4) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    /* Responsive Canvas Container */
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      box-shadow: 0 10px 30px -10px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(56, 189, 248, 0.2);
+    }
+    /* Virtual Control Button Active Feel */
+    .ctrl-btn:active {
+      transform: scale(0.92);
+      filter: brightness(1.3);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-cyber-grid flex flex-col items-center justify-between p-2 sm:p-4 select-none">
+
+  <header class="w-full max-w-2xl flex flex-col items-center gap-3 mt-1 sm:mt-2">
+    <div class="flex items-center justify-between w-full px-2">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-3 h-3 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]"></span>
+        <h1 class="font-arcade text-xl sm:text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-pink-500">
+          NEON SNAKE
+        </h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnSoundToggle" class="px-2.5 py-1 text-xs font-arcade text-cyan-300 border border-cyan-500/40 rounded-lg hover:bg-cyan-500/10 transition-all flex items-center gap-1.5 backdrop-blur-md">
+          <span id="soundIcon">🔊</span>
+          <span class="hidden sm:inline">AUDIO</span>
+        </button>
+        <button id="btnLeaderboard" class="px-2.5 py-1 text-xs font-arcade text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/10 transition-all flex items-center gap-1.5 backdrop-blur-md">
+          <span>🏆</span>
+          <span class="hidden sm:inline">RANKS</span>
+        </button>
+        <button id="btnHelp" class="px-2.5 py-1 text-xs font-arcade text-pink-300 border border-pink-500/40 rounded-lg hover:bg-pink-500/10 transition-all flex items-center gap-1.5 backdrop-blur-md">
+          <span>🎮</span>
+          <span class="hidden sm:inline">GUIDE</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scoreboards Dashboard -->
+    <div class="w-full grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 bg-slate-900/70 border border-cyan-500/30 rounded-xl p-2.5 sm:p-3 backdrop-blur-md shadow-lg">
+      <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-slate-800/50 border border-cyan-500/20">
+        <span class="text-[10px] sm:text-xs tracking-wider text-slate-400 font-arcade uppercase">Score / Target</span>
+        <div class="font-arcade text-base sm:text-xl font-bold text-cyan-300 text-glow-cyan flex items-baseline gap-1">
+          <span id="currentScore">0</span>
+          <span class="text-[11px] text-slate-500 font-normal">/</span>
+          <span id="targetScore" class="text-xs text-slate-400 font-normal">80</span>
+        </div>
+      </div>
+      <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-slate-800/50 border border-pink-500/20">
+        <span class="text-[10px] sm:text-xs tracking-wider text-slate-400 font-arcade uppercase">High Record</span>
+        <span id="highScore" class="font-arcade text-base sm:text-xl font-bold text-pink-400 text-glow-pink">0</span>
+      </div>
+      <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-slate-800/50 border border-amber-500/20">
+        <span class="text-[10px] sm:text-xs tracking-wider text-slate-400 font-arcade uppercase">Current Stage</span>
+        <span id="stageLevel" class="font-arcade text-base sm:text-xl font-bold text-amber-400 text-glow-amber">LV 1</span>
+      </div>
+      <div class="hidden sm:flex flex-col items-center justify-center p-1.5 rounded-lg bg-slate-800/50 border border-emerald-500/20">
+        <span class="text-[10px] sm:text-xs tracking-wider text-slate-400 font-arcade uppercase">Mode</span>
+        <span id="modeDisplay" class="font-arcade text-sm font-bold text-emerald-400">SOLO</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative w-full max-w-2xl flex flex-col items-center my-auto py-2">
+    <!-- Canvas Frame Container -->
+    <div class="relative w-full aspect-square max-w-[560px] max-h-[560px] rounded-2xl p-1 bg-gradient-to-b from-cyan-500/30 via-slate-800/50 to-pink-500/30 shadow-[0_0_25px_rgba(6,182,212,0.2)]">
+      <canvas id="gameCanvas" class="w-full h-full rounded-xl bg-[#080d1a] block cursor-pointer"></canvas>
+
+      <!-- Start Menu Modal (Mode Selection) -->
+      <div id="startMenuModal" class="absolute inset-1 rounded-xl bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-30 transition-all">
+        <div class="mb-4">
+          <span class="inline-block px-3 py-1 text-[11px] font-arcade tracking-widest text-cyan-400 border border-cyan-500/40 rounded-full bg-cyan-950/50 mb-3 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+            CYBERPUNK NEON ENGINE
+          </span>
+          <h2 class="font-arcade text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-pink-500 tracking-wider">
+            NEON ARENA
+          </h2>
+          <p class="text-xs text-slate-400 font-arcade mt-2">請選擇作戰模式以啟動神經連結</p>
+        </div>
+
+        <div class="w-full max-w-xs flex flex-col gap-3 my-2">
+          <button id="btnStartSolo" class="w-full py-3.5 px-4 rounded-xl font-arcade font-bold text-sm bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(6,182,212,0.5)] flex items-center justify-between">
+            <span class="flex items-center gap-2"><span>👤</span> 單獨挑戰模式</span>
+            <span class="text-xs bg-slate-950/20 px-2 py-0.5 rounded">SOLO</span>
+          </button>
+          
+          <button id="btnStartBattle" class="w-full py-3.5 px-4 rounded-xl font-arcade font-bold text-sm bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center justify-between">
+            <span class="flex items-center gap-2"><span>⚔️</span> 對戰模式 (VS AI)</span>
+            <span class="text-xs bg-white/20 px-2 py-0.5 rounded">BATTLE</span>
+          </button>
+        </div>
+
+        <div class="mt-4 text-[11px] font-arcade text-slate-500">
+          達到各關門檻即可選擇進階躍遷或結算退出
+        </div>
+      </div>
+
+      <!-- Level Passed Prompt Modal -->
+      <div id="levelClearModal" class="absolute inset-1 rounded-xl bg-slate-950/90 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center z-25 transition-all border border-amber-500/50">
+        <span class="text-5xl mb-2 animate-bounce">🏆</span>
+        <h2 class="font-arcade text-2xl sm:text-3xl font-black text-amber-400 tracking-wider mb-1 text-glow-amber">
+          STAGE CLEARED!
+        </h2>
+        <p id="levelClearDesc" class="text-xs text-slate-300 font-arcade mb-5">
+          您已達成目標分數，目前生命值維持存活！
+        </p>
+
+        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3.5 w-full max-w-xs mb-5 text-xs font-arcade space-y-1.5">
+          <div class="flex justify-between text-slate-400">
+            <span>當前總得分</span>
+            <span id="stageClearedScore" class="text-cyan-300 font-bold">0</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>下一關門檻</span>
+            <span id="nextStageTargetText" class="text-amber-300 font-bold">160 PTS</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>難度變更</span>
+            <span class="text-rose-400 font-bold">速度提升 + AI強化</span>
+          </div>
+        </div>
+
+        <div class="w-full max-w-xs flex flex-col gap-2.5">
+          <button id="btnNextLevel" class="w-full py-3 rounded-xl font-arcade font-bold text-sm bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+            進入下一等級 (NEXT STAGE)
+          </button>
+          <button id="btnEndGame" class="w-full py-2.5 rounded-xl font-arcade font-bold text-xs bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 active:scale-95 transition-all">
+            結算並結束遊戲 (END GAME)
+          </button>
+        </div>
+      </div>
+
+      <!-- Pause Overlay -->
+      <div id="pauseOverlay" class="absolute inset-1 rounded-xl bg-slate-950/80 backdrop-blur-sm hidden flex flex-col items-center justify-center p-6 text-center z-10 transition-all">
+        <span class="text-4xl mb-2">⏸️</span>
+        <h2 class="font-arcade text-2xl sm:text-3xl font-extrabold text-cyan-300 tracking-wider mb-2 text-glow-cyan">GAME PAUSED</h2>
+        <p class="text-sm text-slate-300 mb-6 font-arcade">按下 [空白鍵] 或下方按鈕繼續任務</p>
+        <button id="btnResume" class="px-6 py-2.5 rounded-xl font-arcade font-bold text-sm bg-cyan-500 text-slate-950 hover:bg-cyan-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+          RESUME GAME
+        </button>
+      </div>
+
+      <!-- Game Over Modal Overlay -->
+      <div id="gameOverModal" class="absolute inset-1 rounded-xl bg-slate-950/90 backdrop-blur-md hidden flex flex-col items-center justify-between p-5 sm:p-6 z-20 transition-all border border-pink-500/40">
+        <div class="text-center w-full mt-2">
+          <h2 class="font-arcade text-2xl sm:text-3xl font-black text-pink-500 tracking-widest text-glow-pink">SYSTEM FAILURE</h2>
+          <p id="newRecordBadge" class="hidden text-xs font-arcade font-bold text-amber-400 tracking-widest mt-1 animate-bounce">
+            ★ NEW HIGH SCORE RECORD! ★
+          </p>
+        </div>
+
+        <div class="w-full bg-slate-900/80 rounded-xl p-3 border border-slate-800 my-2">
+          <div class="flex justify-between items-center text-sm font-arcade mb-2 px-2 pb-2 border-b border-slate-800">
+            <span class="text-slate-400">本次最終得分</span>
+            <span id="finalScore" class="text-lg font-bold text-cyan-300">0</span>
+          </div>
+          <div class="w-full">
+            <span class="text-[11px] font-arcade text-slate-400 block mb-1 text-left px-1">Top 5 Records (LocalStorage)</span>
+            <ul id="historyList" class="space-y-1 text-xs font-arcade text-slate-300">
+              <!-- Dynamically Populated -->
+            </ul>
+          </div>
+        </div>
+
+        <div class="w-full flex gap-2">
+          <button id="btnRestart" class="flex-1 py-3 rounded-xl font-arcade font-bold text-sm bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-400 hover:to-rose-500 active:scale-95 transition-all shadow-[0_0_20px_rgba(236,72,153,0.5)]">
+            PLAY AGAIN (R)
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full max-w-2xl flex flex-col items-center gap-3 mb-1">
+    <!-- Virtual D-Pad / Touch Controller -->
+    <div class="w-full max-w-sm flex items-center justify-between px-4 py-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl backdrop-blur-md">
+      <!-- Auxiliary action buttons -->
+      <div class="flex flex-col gap-2">
+        <button id="btnPause" class="ctrl-btn px-3 py-2 text-xs font-arcade text-slate-300 bg-slate-800/80 border border-slate-700 rounded-xl hover:border-cyan-400 hover:text-cyan-300 transition-all flex items-center gap-1">
+          <span id="btnPauseIcon">⏸️</span>
+          <span id="btnPauseText">PAUSE</span>
+        </button>
+        <button id="btnResetInGame" class="ctrl-btn px-3 py-2 text-xs font-arcade text-slate-300 bg-slate-800/80 border border-slate-700 rounded-xl hover:border-rose-400 hover:text-rose-300 transition-all flex items-center gap-1">
+          <span>🔄</span>
+          <span>MODE</span>
+        </button>
+      </div>
+
+      <!-- D-Pad Matrix -->
+      <div class="grid grid-cols-3 gap-1.5 w-36 h-36">
+        <div></div>
+        <button data-dir="ArrowUp" class="ctrl-btn flex items-center justify-center rounded-xl bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xl font-bold shadow-md hover:bg-slate-700 active:bg-cyan-500 active:text-slate-950 transition-colors">
+          ▲
+        </button>
+        <div></div>
+        
+        <button data-dir="ArrowLeft" class="ctrl-btn flex items-center justify-center rounded-xl bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xl font-bold shadow-md hover:bg-slate-700 active:bg-cyan-500 active:text-slate-950 transition-colors">
+          ◀
+        </button>
+        <div class="flex items-center justify-center text-[10px] font-arcade text-slate-500">
+          NAV
+        </div>
+        <button data-dir="ArrowRight" class="ctrl-btn flex items-center justify-center rounded-xl bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xl font-bold shadow-md hover:bg-slate-700 active:bg-cyan-500 active:text-slate-950 transition-colors">
+          ▶
+        </button>
+
+        <div></div>
+        <button data-dir="ArrowDown" class="ctrl-btn flex items-center justify-center rounded-xl bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xl font-bold shadow-md hover:bg-slate-700 active:bg-cyan-500 active:text-slate-950 transition-colors">
+          ▼
+        </button>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Quick Keyboard Guidance -->
+    <div class="text-[11px] font-arcade text-slate-500 flex flex-wrap justify-center gap-3 px-2 text-center">
+      <span>🕹️ 鍵盤: [W A S D] 或 [方向鍵]</span>
+      <span>⏸️ [空白鍵] 暫停/繼續</span>
+      <span>🏆 [T] 排行榜</span>
+      <span>🔄 [R] 重新開始</span>
+    </div>
+  </footer>
+
+  <!-- Realtime Leaderboard Modal (Can be opened anytime) -->
+  <div id="leaderboardModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="max-w-md w-full bg-slate-900 border border-amber-500/50 rounded-2xl p-5 sm:p-6 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏆</span>
+          <h3 class="font-arcade text-lg font-bold text-amber-400 text-glow-amber">CYBER LEADERBOARD</h3>
+        </div>
+        <button id="btnCloseLeaderboard" class="text-slate-400 hover:text-white text-xl">✕</button>
+      </div>
+
+      <div class="my-4">
+        <div class="flex justify-between items-center mb-2 px-1 text-xs font-arcade text-slate-400">
+          <span>排名 / 時間</span>
+          <span>模式 / 最終得分</span>
+        </div>
+        <ul id="modalLeaderboardList" class="space-y-2 text-xs font-arcade">
+          <!-- Dynamically Injected -->
+        </ul>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+        <button id="btnClearRecords" class="px-3 py-2 rounded-xl font-arcade text-xs text-rose-400 border border-rose-500/30 hover:bg-rose-500/10 active:scale-95 transition-all">
+          🗑️ 清除紀錄
+        </button>
+        <button id="btnResumeFromLeaderboard" class="px-5 py-2 rounded-xl font-arcade font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.4)]">
+          返回遊戲 (RESUME)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help & Instructions Modal -->
+  <div id="helpModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="max-w-md w-full bg-slate-900 border border-cyan-500/40 rounded-2xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="font-arcade text-lg font-bold text-cyan-300">操作指引與遊戲說明</h3>
+        <button id="btnCloseHelp" class="text-slate-400 hover:text-white text-xl">✕</button>
+      </div>
+      <div class="mt-4 space-y-3 text-xs text-slate-300 leading-relaxed font-sans">
+        <p>• <strong class="text-cyan-400">移動轉向：</strong>支援鍵盤方向鍵或 WASD，行動端可直接點擊螢幕上的虛擬十字鍵或直接在畫面上滑動。</p>
+        <p>• <strong class="text-cyan-400">動態邊界空間平移：</strong>當蛇頭推撞邊界時，整個空間視界與食物將自動向該方向延伸推移，不會撞牆暴斃！</p>
+        <p>• <strong class="text-pink-400">霓虹果實海：</strong>場上同時存在 16 顆以上的霓虹果實，包含稀有黃金核與量子紫晶核。</p>
+        <p>• <strong class="text-amber-400">本地歷史存儲：</strong>遊戲紀錄與最高分自動透過 LocalStorage 保存，支援跨瀏覽器分頁即時同步。</p>
+      </div>
+      <button id="btnConfirmHelp" class="w-full mt-6 py-2.5 rounded-xl font-arcade font-bold text-sm bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all">
+        了解，開始遊戲
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. 音效模組 (Web Audio API Synthesizer)
+       ========================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type, duration, endFreq = null) {
+        if (this.muted) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          if (endFreq) {
+            osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
+          }
+
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {
+          // Ignore Web Audio permission issues before user gesture
+        }
+      }
+
+      playEat() {
+        this.playTone(320, 'sine', 0.12, 880);
+      }
+
+      playTurn() {
+        this.playTone(220, 'triangle', 0.04);
+      }
+
+      playDie() {
+        this.playTone(180, 'sawtooth', 0.45, 40);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* ==========================================================================
+       2. 資料儲存防禦層 (GameStorage Adapter with Schema Validation)
+       ========================================================================== */
+    const STORAGE_KEY = 'cyberpunk_snake_records_v1';
+    const DEFAULT_DATA = {
+      highScore: 0,
+      history: [],
+      version: 1
+    };
+
+    class GameStorage {
+      static load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return { ...DEFAULT_DATA };
+          const data = JSON.parse(raw);
+          if (typeof data.highScore !== 'number' || !Array.isArray(data.history)) {
+            return { ...DEFAULT_DATA };
+          }
+          return data;
+        } catch (e) {
+          console.warn('LocalStorage 讀取失敗，使用預設值', e);
+          return { ...DEFAULT_DATA };
+        }
+      }
+
+      static saveScore(newScore) {
+        try {
+          const current = this.load();
+          const isNewRecord = newScore > current.highScore;
+          if (isNewRecord) {
+            current.highScore = newScore;
+          }
+
+          const recordEntry = {
+            score: newScore,
+            mode: gameMode.toUpperCase(),
+            level: currentLevel,
+            date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+
+          current.history.push(recordEntry);
+          current.history.sort((a, b) => b.score - a.score);
+          current.history = current.history.slice(0, 10);
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+          return { isNewRecord, data: current };
+        } catch (e) {
+          console.error('LocalStorage 寫入受阻', e);
+          return { isNewRecord: false, data: DEFAULT_DATA };
+        }
+      }
+
+      static clear() {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          return { ...DEFAULT_DATA };
+        } catch (e) {
+          return { ...DEFAULT_DATA };
+        }
+      }
+    }
+
+    /* ==========================================================================
+       3. 粒子特效系統 (Particle Explosion Engine)
+       ========================================================================== */
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 3 + 1;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.03 + 0.02;
+        this.size = Math.random() * 3 + 1.5;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= this.decay;
+      }
+
+      draw(c) {
+        c.save();
+        c.globalAlpha = Math.max(0, this.alpha);
+        c.fillStyle = this.color;
+        c.shadowColor = this.color;
+        c.shadowBlur = 8;
+        c.beginPath();
+        c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
+      }
+    }
+
+    function createExplosion(gridX, gridY, color) {
+      const cellSize = logicalSize / GRID_SIZE;
+      const cx = gridX * cellSize + cellSize / 2;
+      const cy = gridY * cellSize + cellSize / 2;
+      for (let i = 0; i < 14; i++) {
+        particles.push(new Particle(cx, cy, color));
+      }
+    }
+
+    /* ==========================================================================
+       4. 遊戲常數與方向字典
+       ========================================================================== */
+    const GRID_SIZE = 32;     // 32 x 32 網格
+    const FOOD_COUNT = 16;    // 保持場上 16 顆霓虹食物
+    const BASE_TICK_MS = 125; // 基礎移動週期
+    const MIN_TICK_MS = 55;   // 最高速度上限
+
+    const DIRECTIONS = {
+      ArrowUp:    { x: 0,  y: -1, opp: 'ArrowDown' },
+      ArrowDown:  { x: 0,  y: 1,  opp: 'ArrowUp' },
+      ArrowLeft:  { x: -1, y: 0,  opp: 'ArrowRight' },
+      ArrowRight: { x: 1,  y: 0,  opp: 'ArrowLeft' }
+    };
+
+    const KEY_MAP = {
+      KeyW: 'ArrowUp', ArrowUp: 'ArrowUp',
+      KeyS: 'ArrowDown', ArrowDown: 'ArrowDown',
+      KeyA: 'ArrowLeft', ArrowLeft: 'ArrowLeft',
+      KeyD: 'ArrowRight', ArrowRight: 'ArrowRight'
+    };
+
+    // 遊戲運行狀態
+    let isGameStarted = false; // 是否已從選單啟動遊戲
+    let gameMode = 'solo';     // 'solo' | 'battle'
+    let currentLevel = 1;
+    let targetScore = 80;
+    let snake = [];
+    let enemySnake = [];
+    let enemyDir = 'ArrowLeft';
+    let foods = [];
+    let currentDir = 'ArrowRight';
+    let inputQueue = [];
+    let score = 0;
+    let currentTickInterval = BASE_TICK_MS;
+    let isGameOver = false;
+    let isPaused = false;
+    let isLevelClearPrompt = false;
+    let particles = [];
+    let pulseAngle = 0;
+
+    // 空間世界平移偏移量
+    let worldOffsetX = 0;
+    let worldOffsetY = 0;
+    let shiftEffectAlpha = 0;
+
+    // Fixed-Timestep Loop State
+    let lastTime = 0;
+    let accumulator = 0;
+    let logicalSize = 400; // 邏輯 CSS 繪圖尺寸
+
+    // DOM 元素引用
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('currentScore');
+    const targetScoreEl = document.getElementById('targetScore');
+    const highScoreEl = document.getElementById('highScore');
+    const stageLevelEl = document.getElementById('stageLevel');
+    const modeDisplayEl = document.getElementById('modeDisplay');
+    const startMenuModal = document.getElementById('startMenuModal');
+    const btnStartSolo = document.getElementById('btnStartSolo');
+    const btnStartBattle = document.getElementById('btnStartBattle');
+    const levelClearModal = document.getElementById('levelClearModal');
+    const levelClearDesc = document.getElementById('levelClearDesc');
+    const stageClearedScore = document.getElementById('stageClearedScore');
+    const nextStageTargetText = document.getElementById('nextStageTargetText');
+    const btnNextLevel = document.getElementById('btnNextLevel');
+    const btnEndGame = document.getElementById('btnEndGame');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const finalScoreEl = document.getElementById('finalScore');
+    const newRecordBadge = document.getElementById('newRecordBadge');
+    const historyList = document.getElementById('historyList');
+    const btnPause = document.getElementById('btnPause');
+    const btnPauseIcon = document.getElementById('btnPauseIcon');
+    const btnPauseText = document.getElementById('btnPauseText');
+    const btnResume = document.getElementById('btnResume');
+    const btnRestart = document.getElementById('btnRestart');
+    const btnResetInGame = document.getElementById('btnResetInGame');
+    const btnHelp = document.getElementById('btnHelp');
+    const helpModal = document.getElementById('helpModal');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+    const btnConfirmHelp = document.getElementById('btnConfirmHelp');
+    const btnSoundToggle = document.getElementById('btnSoundToggle');
+    const soundIcon = document.getElementById('soundIcon');
+    const btnLeaderboard = document.getElementById('btnLeaderboard');
+    const leaderboardModal = document.getElementById('leaderboardModal');
+    const modalLeaderboardList = document.getElementById('modalLeaderboardList');
+    const btnCloseLeaderboard = document.getElementById('btnCloseLeaderboard');
+    const btnResumeFromLeaderboard = document.getElementById('btnResumeFromLeaderboard');
+    const btnClearRecords = document.getElementById('btnClearRecords');
+
+    let wasPausedBeforeModal = false;
+
+    /* ==========================================================================
+       5. 遊戲核心邏輯
+       ========================================================================== */
+    function calcLevelTarget(lvl) {
+      return lvl * 80 + (lvl - 1) * 20;
+    }
+
+    function initGame(mode = gameMode, level = 1, keepScore = false) {
+      gameMode = mode;
+      currentLevel = level;
+      targetScore = calcLevelTarget(currentLevel);
+      currentTickInterval = Math.max(MIN_TICK_MS, BASE_TICK_MS - (currentLevel - 1) * 10);
+
+      // 玩家蛇起始狀態（置中偏左）
+      snake = [
+        { x: 12, y: 16 },
+        { x: 11, y: 16 },
+        { x: 10, y: 16 }
+      ];
+      currentDir = 'ArrowRight';
+      inputQueue = [];
+
+      // 若為對戰模式，初始化 AI 敵人蛇（置中偏右）
+      if (gameMode === 'battle') {
+        enemySnake = [
+          { x: 22, y: 16 },
+          { x: 23, y: 16 },
+          { x: 24, y: 16 }
+        ];
+        enemyDir = 'ArrowLeft';
+      } else {
+        enemySnake = [];
+      }
+
+      if (!keepScore) {
+        score = 0;
+      }
+
+      isGameOver = false;
+      isPaused = false;
+      isLevelClearPrompt = false;
+      particles = [];
+      accumulator = 0;
+      worldOffsetX = 0;
+      worldOffsetY = 0;
+      shiftEffectAlpha = 0;
+
+      initFoods();
+      updateScoreUI();
+
+      levelClearModal.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      gameOverModal.classList.add('hidden');
+      newRecordBadge.classList.add('hidden');
+      btnPauseIcon.innerText = '⏸️';
+      btnPauseText.innerText = 'PAUSE';
+    }
+
+    function initFoods() {
+      foods = [];
+      while (foods.length < FOOD_COUNT) {
+        spawnSingleFood();
+      }
+    }
+
+    function spawnSingleFood() {
+      let valid = false;
+      let fx = 0, fy = 0;
+      let attempts = 0;
+
+      while (!valid && attempts < 300) {
+        attempts++;
+        fx = Math.floor(Math.random() * GRID_SIZE);
+        fy = Math.floor(Math.random() * GRID_SIZE);
+
+        const onSnake = snake.some(seg => seg.x === fx && seg.y === fy);
+        const onEnemy = enemySnake.some(seg => seg.x === fx && seg.y === fy);
+        const onOtherFood = foods.some(f => f.x === fx && f.y === fy);
+        if (!onSnake && !onEnemy && !onOtherFood) {
+          valid = true;
+        }
+      }
+
+      if (valid) {
+        const roll = Math.random();
+        let points = 10;
+        let color = '#f43f5e';
+        let glow = '#ec4899';
+        let type = 'standard';
+
+        if (roll < 0.15) {
+          points = 30;
+          color = '#a855f7';
+          glow = '#c084fc';
+          type = 'quantum';
+        } else if (roll < 0.35) {
+          points = 20;
+          color = '#facc15';
+          glow = '#eab308';
+          type = 'gold';
+        }
+
+        foods.push({ x: fx, y: fy, points, color, glow, type });
+      }
+    }
+
+    function updateEnemyAI() {
+      if (enemySnake.length === 0) return;
+      const head = enemySnake[0];
+
+      let nearestFood = null;
+      let minDist = Infinity;
+      for (let f of foods) {
+        const dist = Math.abs(f.x - head.x) + Math.abs(f.y - head.y);
+        if (dist < minDist) {
+          minDist = dist;
+          nearestFood = f;
+        }
+      }
+
+      const possibleDirs = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      const candidates = [];
+
+      for (let dirKey of possibleDirs) {
+        if (dirKey === DIRECTIONS[enemyDir].opp) continue;
+
+        const vec = DIRECTIONS[dirKey];
+        const nextX = (head.x + vec.x + GRID_SIZE) % GRID_SIZE;
+        const nextY = (head.y + vec.y + GRID_SIZE) % GRID_SIZE;
+
+        const collidesEnemy = enemySnake.slice(0, -1).some(seg => seg.x === nextX && seg.y === nextY);
+        const collidesPlayer = snake.some(seg => seg.x === nextX && seg.y === nextY);
+
+        if (!collidesEnemy && !collidesPlayer) {
+          const distToFood = nearestFood
+            ? Math.abs(nearestFood.x - nextX) + Math.abs(nearestFood.y - nextY)
+            : 0;
+          candidates.push({ dir: dirKey, dist: distToFood });
+        }
+      }
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => a.dist - b.dist);
+        enemyDir = candidates[0].dir;
+      }
+
+      const vec = DIRECTIONS[enemyDir];
+      const nextHead = {
+        x: (head.x + vec.x + GRID_SIZE) % GRID_SIZE,
+        y: (head.y + vec.y + GRID_SIZE) % GRID_SIZE
+      };
+
+      enemySnake.unshift(nextHead);
+
+      const foodIdx = foods.findIndex(f => f.x === nextHead.x && f.y === nextHead.y);
+      if (foodIdx !== -1) {
+        const eaten = foods[foodIdx];
+        createExplosion(eaten.x, eaten.y, '#f43f5e');
+        foods.splice(foodIdx, 1);
+        spawnSingleFood();
+      } else {
+        enemySnake.pop();
+      }
+    }
+
+    function enqueueDirection(dirKey) {
+      if (!isGameStarted || isGameOver || isLevelClearPrompt) return;
+      if (!DIRECTIONS[dirKey]) return;
+      if (inputQueue.length >= 2) return;
+
+      const lastDir = inputQueue.length > 0 ? inputQueue[inputQueue.length - 1] : currentDir;
+      if (dirKey !== lastDir && dirKey !== DIRECTIONS[lastDir].opp) {
+        inputQueue.push(dirKey);
+        sound.playTurn();
+      }
+    }
+
+    function shiftWorldSpace(shiftX, shiftY) {
+      worldOffsetX += shiftX;
+      worldOffsetY += shiftY;
+      shiftEffectAlpha = 1.0;
+
+      for (let seg of snake) {
+        seg.x -= shiftX;
+        seg.y -= shiftY;
+      }
+      for (let seg of enemySnake) {
+        seg.x -= shiftX;
+        seg.y -= shiftY;
+      }
+      for (let food of foods) {
+        food.x -= shiftX;
+        food.y -= shiftY;
+      }
+
+      for (let i = 0; i < foods.length; i++) {
+        const f = foods[i];
+        if (f.x < 0 || f.x >= GRID_SIZE || f.y < 0 || f.y >= GRID_SIZE) {
+          foods.splice(i, 1);
+          spawnSingleFood();
+          i--;
+        }
+      }
+      while (foods.length < FOOD_COUNT) {
+        spawnSingleFood();
+      }
+    }
+
+    function triggerLevelClear() {
+      isLevelClearPrompt = true;
+      sound.playTone(587, 'sine', 0.2, 880);
+
+      stageClearedScore.innerText = `${score} PTS`;
+      nextStageTargetText.innerText = `${calcLevelTarget(currentLevel + 1)} PTS`;
+      levelClearDesc.innerText = `恭喜存活並突破 LV ${currentLevel}（達到 ${targetScore} 分）！請選擇是否進入下一難度關卡：`;
+      levelClearModal.classList.remove('hidden');
+    }
+
+    function fixedUpdate() {
+      if (!isGameStarted || isGameOver || isPaused || isLevelClearPrompt || snake.length === 0) return;
+
+      if (inputQueue.length > 0) {
+        currentDir = inputQueue.shift();
+      }
+
+      const dirVector = DIRECTIONS[currentDir];
+      const head = snake[0];
+      let newHead = {
+        x: head.x + dirVector.x,
+        y: head.y + dirVector.y
+      };
+
+      // 邊界空間平移
+      let shiftX = 0;
+      let shiftY = 0;
+
+      if (newHead.x < 0) shiftX = -1;
+      else if (newHead.x >= GRID_SIZE) shiftX = 1;
+      
+      if (newHead.y < 0) shiftY = -1;
+      else if (newHead.y >= GRID_SIZE) shiftY = 1;
+
+      if (shiftX !== 0 || shiftY !== 0) {
+        shiftWorldSpace(shiftX, shiftY);
+        newHead.x -= shiftX;
+        newHead.y -= shiftY;
+      }
+
+      // 自體碰撞檢查
+      for (let i = 0; i < snake.length - 1; i++) {
+        if (snake[i].x === newHead.x && snake[i].y === newHead.y) {
+          triggerGameOver();
+          return;
+        }
+      }
+
+      // 對戰模式撞擊 AI 蛇身檢查
+      if (gameMode === 'battle') {
+        for (let seg of enemySnake) {
+          if (seg.x === newHead.x && seg.y === newHead.y) {
+            triggerGameOver();
+            return;
+          }
+        }
+      }
+
+      snake.unshift(newHead);
+
+      if (gameMode === 'battle') {
+        updateEnemyAI();
+        if (enemySnake.length > 0) {
+          const aiHead = enemySnake[0];
+          for (let seg of snake) {
+            if (seg.x === aiHead.x && seg.y === aiHead.y) {
+              triggerGameOver();
+              return;
+            }
+          }
+        }
+      }
+
+      const eatenIndex = foods.findIndex(f => f.x === newHead.x && f.y === newHead.y);
+      if (eatenIndex !== -1) {
+        const eatenFood = foods[eatenIndex];
+        score += eatenFood.points;
+        sound.playEat();
+        createExplosion(eatenFood.x, eatenFood.y, eatenFood.glow);
+
+        foods.splice(eatenIndex, 1);
+        spawnSingleFood();
+        updateScoreUI();
+
+        if (score >= targetScore) {
+          triggerLevelClear();
+          return;
+        }
+      } else {
+        snake.pop();
+      }
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      sound.playDie();
+      if (snake[0]) {
+        createExplosion(snake[0].x, snake[0].y, '#f43f5e');
+      }
+
+      const { isNewRecord, data } = GameStorage.saveScore(score);
+
+      finalScoreEl.innerText = score;
+      if (isNewRecord && score > 0) {
+        newRecordBadge.classList.remove('hidden');
+      } else {
+        newRecordBadge.classList.add('hidden');
+      }
+
+      renderHistoryModal(data.history);
+      updateScoreUI();
+      gameOverModal.classList.remove('hidden');
+    }
+
+    /* ==========================================================================
+       6. 畫面渲染引擎 (High-FPS Canvas Render)
+       ========================================================================== */
+    function render() {
+      const w = logicalSize;
+      const h = logicalSize;
+      const cellSize = w / GRID_SIZE;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 繪製背景發光微網格
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= GRID_SIZE; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cellSize, 0);
+        ctx.lineTo(i * cellSize, h);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(w, i * cellSize);
+        ctx.stroke();
+      }
+
+      // 空間平移衝擊波特效
+      if (shiftEffectAlpha > 0) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(6, 182, 212, ${shiftEffectAlpha * 0.7})`;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, w - 4, h - 4);
+        ctx.restore();
+        shiftEffectAlpha -= 0.05;
+      }
+
+      // 繪製霓虹食物海
+      pulseAngle += 0.06;
+      foods.forEach((f, idx) => {
+        const fPulse = 1 + Math.sin(pulseAngle + idx * 0.6) * 0.18;
+        const fx = f.x * cellSize + cellSize / 2;
+        const fy = f.y * cellSize + cellSize / 2;
+        const fRadius = (cellSize / 2.5) * fPulse;
+
+        ctx.save();
+        ctx.shadowColor = f.glow;
+        ctx.shadowBlur = f.type === 'quantum' ? 26 : (f.type === 'gold' ? 20 : 14);
+        ctx.fillStyle = f.color;
+        ctx.beginPath();
+        ctx.arc(fx, fy, Math.max(1, fRadius), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = f.type === 'quantum' ? '#f3e8ff' : (f.type === 'gold' ? '#fef08a' : '#fbcfe8');
+        ctx.beginPath();
+        ctx.arc(fx - fRadius * 0.3, fy - fRadius * 0.3, Math.max(1, fRadius * 0.35), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // 繪製對手 AI 蛇
+      if (gameMode === 'battle' && enemySnake.length > 0) {
+        for (let i = enemySnake.length - 1; i >= 0; i--) {
+          const seg = enemySnake[i];
+          const px = seg.x * cellSize;
+          const py = seg.y * cellSize;
+          const isEnemyHead = i === 0;
+
+          ctx.save();
+          if (isEnemyHead) {
+            ctx.fillStyle = '#f43f5e';
+            ctx.shadowColor = '#e11d48';
+            ctx.shadowBlur = 18;
+            roundRect(ctx, px + 1.5, py + 1.5, cellSize - 3, cellSize - 3, 5);
+            ctx.fill();
+            drawEyes(ctx, px, py, cellSize, enemyDir, '#ffffff');
+          } else {
+            ctx.fillStyle = 'rgba(225, 29, 72, 0.7)';
+            ctx.shadowColor = 'rgba(244, 63, 94, 0.3)';
+            ctx.shadowBlur = 8;
+            roundRect(ctx, px + 2, py + 2, cellSize - 4, cellSize - 4, 3.5);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      // 繪製玩家蛇身
+      if (snake.length > 0) {
+        for (let i = snake.length - 1; i >= 0; i--) {
+          const seg = snake[i];
+          const px = seg.x * cellSize;
+          const py = seg.y * cellSize;
+          const isHead = i === 0;
+
+          ctx.save();
+          const ratio = i / Math.max(1, snake.length);
+
+          if (isHead) {
+            ctx.fillStyle = '#22d3ee';
+            ctx.shadowColor = '#06b6d4';
+            ctx.shadowBlur = 18;
+            roundRect(ctx, px + 1.5, py + 1.5, cellSize - 3, cellSize - 3, 5);
+            ctx.fill();
+            drawEyes(ctx, px, py, cellSize, currentDir, '#060913');
+          } else {
+            ctx.fillStyle = getGradientColor(ratio);
+            ctx.shadowColor = 'rgba(6, 182, 212, 0.3)';
+            ctx.shadowBlur = 8;
+            roundRect(ctx, px + 2, py + 2, cellSize - 4, cellSize - 4, 3.5);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      // 繪製並更新粒子
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(ctx);
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawEyes(c, x, y, size, dir, eyeColor = '#060913') {
+      c.fillStyle = eyeColor;
+      let e1x, e1y, e2x, e2y;
+      const eyeR = Math.max(1, size * 0.12);
+
+      switch (dir) {
+        case 'ArrowUp':
+          e1x = x + size * 0.3; e1y = y + size * 0.3;
+          e2x = x + size * 0.7; e2y = y + size * 0.3;
+          break;
+        case 'ArrowDown':
+          e1x = x + size * 0.3; e1y = y + size * 0.7;
+          e2x = x + size * 0.7; e2y = y + size * 0.7;
+          break;
+        case 'ArrowLeft':
+          e1x = x + size * 0.3; e1y = y + size * 0.3;
+          e2x = x + size * 0.3; e2y = y + size * 0.7;
+          break;
+        case 'ArrowRight':
+        default:
+          e1x = x + size * 0.7; e1y = y + size * 0.3;
+          e2x = x + size * 0.7; e2y = y + size * 0.7;
+          break;
+      }
+
+      c.beginPath();
+      c.arc(e1x, e1y, eyeR, 0, Math.PI * 2);
+      c.arc(e2x, e2y, eyeR, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    function getGradientColor(ratio) {
+      const r = Math.floor(6 + ratio * 80);
+      const g = Math.floor(182 - ratio * 100);
+      const b = Math.floor(212 - ratio * 40);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function roundRect(c, x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.lineTo(x + w - r, y);
+      c.quadraticCurveTo(x + w, y, x + w, y + r);
+      c.lineTo(x + w, y + h - r);
+      c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      c.lineTo(x + r, y + h);
+      c.quadraticCurveTo(x, y + h, x, y + h - r);
+      c.lineTo(x, y + r);
+      c.quadraticCurveTo(x, y, x + r, y);
+      c.closePath();
+    }
+
+    /* ==========================================================================
+       7. 固定時間步長遊戲主迴圈 (Fixed Timestep Loop via rAF)
+       ========================================================================== */
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      let dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      if (dt > 1000) dt = 1000;
+
+      if (isGameStarted && !isPaused && !isGameOver && !isLevelClearPrompt) {
+        accumulator += dt;
+        while (accumulator >= currentTickInterval) {
+          fixedUpdate();
+          accumulator -= currentTickInterval;
+        }
+      }
+
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* ==========================================================================
+       8. 響應式 Canvas 與 UI 事件處理
+       ========================================================================== */
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      
+      const size = Math.floor(rect.width || 400);
+      if (size <= 0) return;
+
+      logicalSize = size;
+      canvas.width = Math.floor(size * dpr);
+      canvas.height = Math.floor(size * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 支援 Retina 像素比高清渲染
+    }
+
+    function updateScoreUI() {
+      scoreEl.innerText = score;
+      targetScoreEl.innerText = targetScore;
+      const data = GameStorage.load();
+      highScoreEl.innerText = data.highScore;
+      stageLevelEl.innerText = `LV ${currentLevel}`;
+      modeDisplayEl.innerText = gameMode === 'battle' ? 'BATTLE (VS AI)' : 'SOLO';
+    }
+
+    function renderHistoryModal(history) {
+      historyList.innerHTML = '';
+      if (!history || history.length === 0) {
+        historyList.innerHTML = '<li class="text-slate-500 text-center py-1">尚無歷史紀錄</li>';
+        return;
+      }
+      history.slice(0, 5).forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center py-0.5 px-2 rounded bg-slate-800/40';
+        li.innerHTML = `
+          <span class="text-slate-400">#${index + 1}</span>
+          <span class="text-slate-400 text-[10px]">${item.date || '--:--'}</span>
+          <span class="font-bold ${index === 0 ? 'text-pink-400' : 'text-cyan-300'}">${item.score} PTS</span>
+        `;
+        historyList.appendChild(li);
+      });
+    }
+
+    function openLeaderboard() {
+      wasPausedBeforeModal = isPaused;
+      if (isGameStarted && !isPaused && !isGameOver && !isLevelClearPrompt) {
+        togglePause();
+      }
+      populateLeaderboardList();
+      leaderboardModal.classList.remove('hidden');
+    }
+
+    function closeLeaderboard() {
+      leaderboardModal.classList.add('hidden');
+      if (isGameStarted && isPaused && !wasPausedBeforeModal && !isGameOver && !isLevelClearPrompt) {
+        togglePause();
+      }
+    }
+
+    function populateLeaderboardList() {
+      modalLeaderboardList.innerHTML = '';
+      const data = GameStorage.load();
+      if (!data.history || data.history.length === 0) {
+        modalLeaderboardList.innerHTML = `
+          <li class="text-slate-500 text-center py-6 bg-slate-800/30 rounded-xl border border-slate-800">
+            目前尚無挑戰紀錄，開始遊玩來爭奪排行！
+          </li>
+        `;
+        return;
+      }
+
+      data.history.forEach((item, idx) => {
+        const li = document.createElement('li');
+        const isTop1 = idx === 0;
+        const isTop3 = idx < 3;
+        const badgeColor = isTop1 ? 'text-amber-300 bg-amber-500/20 border-amber-500/40' : (isTop3 ? 'text-cyan-300 bg-cyan-500/20 border-cyan-500/40' : 'text-slate-400 bg-slate-800/40 border-slate-700');
+        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx + 1}`));
+
+        li.className = `flex justify-between items-center p-2.5 rounded-xl bg-slate-800/60 border ${badgeColor} transition-all hover:bg-slate-800/90`;
+        li.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 text-center font-bold text-sm">${medal}</span>
+            <div class="flex flex-col">
+              <span class="text-slate-200 font-bold">${item.date || '未知時間'}</span>
+              <span class="text-[10px] text-slate-500">LV ${item.level || 1}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800">${item.mode || 'SOLO'}</span>
+            <span class="font-bold text-sm ${isTop1 ? 'text-amber-400 text-glow-amber' : 'text-cyan-300'}">${item.score} PTS</span>
+          </div>
+        `;
+        modalLeaderboardList.appendChild(li);
+      });
+    }
+
+    function togglePause() {
+      if (!isGameStarted || isGameOver || isLevelClearPrompt) return;
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseOverlay.classList.remove('hidden');
+        btnPauseIcon.innerText = '▶️';
+        btnPauseText.innerText = 'PLAY';
+      } else {
+        pauseOverlay.classList.add('hidden');
+        btnPauseIcon.innerText = '⏸️';
+        btnPauseText.innerText = 'PAUSE';
+      }
+    }
+
+    // 鍵盤操控監聽
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+      }
+
+      if (e.code === 'Space') {
+        togglePause();
+        return;
+      }
+
+      if (e.code === 'KeyR') {
+        if (isGameStarted) {
+          initGame(gameMode, 1, false);
+        }
+        return;
+      }
+
+      if (e.code === 'KeyT') {
+        if (leaderboardModal.classList.contains('hidden')) {
+          openLeaderboard();
+        } else {
+          closeLeaderboard();
+        }
+        return;
+      }
+
+      const mappedDir = KEY_MAP[e.code];
+      if (mappedDir) {
+        if (isPaused) togglePause();
+        enqueueDirection(mappedDir);
+      }
+    });
+
+    // 模式選擇按鈕事件
+    btnStartSolo.addEventListener('click', () => {
+      startMenuModal.classList.add('hidden');
+      isGameStarted = true;
+      initGame('solo', 1, false);
+    });
+
+    btnStartBattle.addEventListener('click', () => {
+      startMenuModal.classList.add('hidden');
+      isGameStarted = true;
+      initGame('battle', 1, false);
+    });
+
+    btnNextLevel.addEventListener('click', () => {
+      initGame(gameMode, currentLevel + 1, true);
+    });
+
+    btnEndGame.addEventListener('click', () => {
+      levelClearModal.classList.add('hidden');
+      triggerGameOver();
+    });
+
+    // 虛擬 D-Pad 按鈕操控
+    document.querySelectorAll('[data-dir]').forEach(btn => {
+      const handlePress = (e) => {
+        e.preventDefault();
+        if (isPaused) togglePause();
+        enqueueDirection(btn.dataset.dir);
+      };
+      btn.addEventListener('touchstart', handlePress, { passive: false });
+      btn.addEventListener('mousedown', handlePress);
+    });
+
+    // 觸控滑動手勢
+    let touchStartX = 0;
+    let touchStartY = 0;
+    canvas.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      if (Math.max(absX, absY) > 25) {
+        if (isPaused) togglePause();
+        if (absX > absY) {
+          enqueueDirection(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+        } else {
+          enqueueDirection(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+        }
+      }
+    }, { passive: true });
+
+    // 跨分頁 LocalStorage 即時同步監聽
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        const updated = GameStorage.load();
+        highScoreEl.innerText = updated.highScore;
+      }
+    });
+
+    // 控制介面按鈕綁定
+    btnPause.addEventListener('click', togglePause);
+    btnResume.addEventListener('click', togglePause);
+    btnRestart.addEventListener('click', () => {
+      gameOverModal.classList.add('hidden');
+      startMenuModal.classList.remove('hidden');
+      isGameStarted = false;
+    });
+    btnResetInGame.addEventListener('click', () => {
+      gameOverModal.classList.add('hidden');
+      levelClearModal.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      startMenuModal.classList.remove('hidden');
+      isGameStarted = false;
+    });
+
+    btnLeaderboard.addEventListener('click', openLeaderboard);
+    btnCloseLeaderboard.addEventListener('click', closeLeaderboard);
+    btnResumeFromLeaderboard.addEventListener('click', closeLeaderboard);
+    btnClearRecords.addEventListener('click', () => {
+      GameStorage.clear();
+      updateScoreUI();
+      populateLeaderboardList();
+    });
+
+    btnHelp.addEventListener('click', () => helpModal.classList.remove('hidden'));
+    btnCloseHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
+    btnConfirmHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
+
+    btnSoundToggle.addEventListener('click', () => {
+      sound.muted = !sound.muted;
+      soundIcon.innerText = sound.muted ? '🔇' : '🔊';
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    /* ==========================================================================
+       9. 遊戲入口初始化啟動
+       ========================================================================== */
+    window.onload = () => {
+      resizeCanvas();
+      // 先建立展示用的預覽狀態（蛇與食物均存在）
+      initGame('solo', 1, false);
+      isGameStarted = false; // 等待玩家在選單中點選模式
+      updateScoreUI();
+      startMenuModal.classList.remove('hidden');
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
